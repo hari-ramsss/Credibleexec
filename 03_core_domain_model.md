@@ -1,1351 +1,70 @@
-```text
-It will specify exactly how we divide the application into:
+03_CORE_DOMAIN_MODEL.md
+CredibleExec — Domain Model, Data Structures & State Machine
 
-Frontend
-    ↓
-Agent / Bazantic
-    ↓
-Mandate Compiler
-    ↓
-CredibleExec Backend
-    ↓
-Smart Contract
-    ↓
-Privy
-    ↓
-1inch
-    ↓
-Blockchain
-    ↓
-Verifier
-    ↓
-Settlement
-```
-
-And, critically, it will include MVP architecture + future extension points + trust boundaries + data flow + failure flow + repository structure, so the coding agent has a precise blueprint before it writes the first line of code.
-
-*Today 1:01 AM*  
-*ok lets move on to the next document actually.....*
-
----
-
-# 02_SYSTEM_ARCHITECTURE.md
-# CredibleExec — System Architecture & Technical Blueprint
-
-- **Version:** 1.0
-- **Status:** Implementation Specification
-- **Depends on:** `01_PRODUCT_CONSTITUTION.md`
+Version: 1.0
+Status: Implementation Specification
+Depends on: 01_PRODUCT_CONSTITUTION.md, 02_SYSTEM_ARCHITECTURE.md
 
 ---
 
 ## 1. Purpose
 
-This document defines the technical architecture of CredibleExec.
+This document defines the data model of CredibleExec.
 
-The goal is to give the coding agent a precise implementation blueprint while keeping the MVP small enough to complete during the hackathon.
+The coding agent must use these domain objects as the foundation for:
+- smart contracts
+- backend services
+- verifier
+- settlement engine
+- frontend state
+- API responses
+- event handling
+- future extensions
 
-The architecture must support:
-- Natural-language financial requests.
-- AI interpretation into structured mandates.
-- Creation of an economically backed commitment.
-- Real agent collateral locking.
-- User authorization through Privy.
-- Financial execution through 1inch.
-- Deterministic outcome verification.
-- Bond release or slashing.
-- A simple user-facing lifecycle.
-
-The architecture must also leave clean extension points for future capabilities without requiring a complete rewrite.
+The goal is to establish a single vocabulary across the entire application.
 
 ---
 
-## 2. Architectural Principle
+## 2. Core Domain Model
 
-The system should be built around one central object:
-
-> **Financial Commitment**
-
-Everything else interacts with that commitment.
-
-```text
-                    ┌─────────────┐
-                    │    USER     │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  FRONTEND   │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  BAZANTIC   │
-                    │    AGENT    │
-                    └──────┬──────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │ MANDATE COMPILER│
-                  └────────┬────────┘
-                           │
-                           ▼
-                ┌──────────────────────┐
-                │ CREDIBLEEXEC CORE    │
-                │                      │
-                │ Commitment + Evidence│
-                │ + Settlement         │
-                └───────┬───────┬──────┘
-                        │       │
-                ┌───────┘       └────────┐
-                ▼                         ▼
-        ┌──────────────┐          ┌──────────────┐
-        │ BOND CONTRACT│          │    PRIVY     │
-        └──────────────┘          └──────┬───────┘
-                                         │
-                                         ▼
-                                  ┌──────────────┐
-                                  │    1INCH     │
-                                  └──────┬───────┘
-                                         │
-                                         ▼
-                                  ┌──────────────┐
-                                  │  BLOCKCHAIN  │
-                                  └──────┬───────┘
-                                         │
-                                         ▼
-                                  ┌──────────────┐
-                                  │   VERIFIER   │
-                                  └──────┬───────┘
-                                         │
-                                  ┌──────┴──────┐
-                                  ▼             ▼
-                               SUCCESS        FAILURE
-                                  │             │
-                                  ▼             ▼
-                              RELEASE        SLASH
-                                BOND           BOND
-```
-
----
-
-## 3. System Components
-
-The MVP consists of eight logical components.
-
-| Component | Responsibility |
-| --- | --- |
-| **Frontend** | User interaction |
-| **Agent** | Understand natural-language request |
-| **Mandate Compiler** | Convert intent into machine-verifiable conditions |
-| **CredibleExec Core** | Manage commitments and lifecycle |
-| **Bond Contract** | Hold agent collateral |
-| **Privy** | Wallet and authorization |
-| **1inch** | Execute financial transaction |
-| **Verifier** | Determine whether commitment was fulfilled |
-
----
-
-## 4. Responsibility Boundaries
-
-This separation is non-negotiable.
-
-### Frontend
-
-Responsible for:
-- displaying information
-- collecting user input
-- showing commitment
-- requesting user approval
-- showing execution status
-- showing settlement result
-
-The frontend must not decide whether a commitment succeeded.
-
-### Agent / Bazantic
-
-Responsible for:
-- interpreting natural language
-- identifying financial parameters
-- producing structured mandate
-- orchestrating the workflow
-
-The agent must not directly determine final settlement.
-
-### Mandate Compiler
-
-Responsible for converting:
-- Natural language
-
-into:
-- Structured financial constraints
-
-Example:
-> "Get at least 0.48 ETH"
-
-becomes:
-- **minOutput** = 0.48 ETH
-
-### CredibleExec Core
-
-Responsible for:
-- creating commitments
-- associating mandates with commitments
-- tracking lifecycle
-- collecting execution evidence
-- triggering settlement
-
-### Bond Contract
-
-Responsible for:
-- receiving collateral
-- locking collateral
-- releasing collateral
-- slashing collateral
-- preventing double settlement
-
-### Privy
-
-Responsible for:
-- wallet infrastructure
-- authorization
-- transaction signing/execution boundary
-
-CredibleExec should use Privy, not rebuild it.
-
-### 1inch
-
-Responsible for:
-- quote/execution routing
-- performing the financial transaction
-
-1inch is an execution rail, not the accountability mechanism.
-
-### Verifier
-
-Responsible for:
-- Determining whether the actual execution satisfies the commitment.
-
-It must operate from objective execution evidence.
-
----
-
-## 5. Trust Model
-
-The system has several different trust boundaries.
-
-```text
-                    USER
-                      │
-              trusts the interface
-                      │
-                      ▼
-                    AGENT
-                      │
-          NOT inherently trusted
-                      │
-                      ▼
-                 COMMITMENT
-                      │
-          economically constrained
-                      │
-                      ▼
-                   PRIVY
-                      │
-              authorization
-                      │
-                      ▼
-                  1INCH
-                      │
-                  execution
-                      │
-                      ▼
-                BLOCKCHAIN
-                      │
-                source of truth
-                      │
-                      ▼
-                 VERIFIER
-                      │
-             objective evaluation
-                      │
-                      ▼
-                 SETTLEMENT
-```
-
-The fundamental philosophy is:
-
-> Do not require the agent to be honest when the system can verify the outcome.
-
----
-
-## 6. User Funds vs Agent Collateral
-
-This separation must exist throughout the entire architecture.
-
-```text
-USER
-
-$1,000 USDC
-      │
-      ▼
-PRIVY WALLET
-      │
-      ▼
-1INCH EXECUTION
-```
-
-Separately:
-
-```text
-AGENT
-
-$100 USDC
-      │
-      ▼
-CREDIBLEEXEC BOND CONTRACT
-```
-
-Never represent the user's principal as the agent's bond.
-
-Never deduct the bond from the user's execution capital.
-
----
-
-## 7. Commitment as the Central Domain Object
-
-Every execution should reference a commitment.
-
-Conceptually:
-
-```typescript
-type Commitment = {
-    id: string;
-
-    agent: Address;
-
-    principal: {
-        token: Address;
-        amount: bigint;
-    };
-
-    targetAsset: Address;
-
-    maxSpend: bigint;
-
-    minOutput: bigint;
-
-    recipient: Address;
-
-    deadline: number;
-
-    bondAmount: bigint;
-
-    status: CommitmentStatus;
-};
-```
-
-Possible statuses:
-
-```typescript
-enum CommitmentStatus {
-    CREATED,
-    FUNDED,
-    ACTIVE,
-    FULFILLED,
-    FAILED,
-    EXPIRED,
-    CANCELLED
-}
-```
-
-Do not add dozens of states unless required.
-
----
-
-## 8. High-Level Data Flow
-
-The primary workflow is:
-
-```text
-1. User Request
-       ↓
-2. Agent Interpretation
-       ↓
-3. Mandate Creation
-       ↓
-4. Commitment Creation
-       ↓
-5. Agent Bond Deposit
-       ↓
-6. User Authorization
-       ↓
-7. Financial Execution
-       ↓
-8. Blockchain Confirmation
-       ↓
-9. Evidence Extraction
-       ↓
-10. Deterministic Verification
-       ↓
-11. Settlement
-       ↓
-12. UI Result
-```
-
----
-
-## 9. Step 1 — User Request
-
-The frontend receives:
-> Swap $1,000 USDC for ETH and send it to my treasury.  
-> Get at least 0.48 ETH within 60 seconds.
-
-The frontend should send this request to the agent layer.
-
-It should not attempt to interpret the financial constraints itself.
-
----
-
-## 10. Step 2 — Agent Interpretation
-
-Bazantic/agent workflow receives:
-- `userRequest`
-
-The agent extracts:
-- `assetIn`
-- `assetOut`
-- `amount`
-- `recipient`
-- `minimum output`
-- `deadline`
-
-The agent should produce a structured intermediate representation.
-
-Example:
-
-```json
-{
-  "assetIn": "USDC",
-  "assetOut": "ETH",
-  "amount": "1000",
-  "recipient": "0x...",
-  "minOutput": "0.48",
-  "deadlineSeconds": 60
-}
-```
-
----
-
-## 11. Step 3 — Mandate Compilation
-
-The intermediate representation becomes a formal commitment.
-
-Example:
-
-```json
-{
-  "assetIn": "USDC",
-  "assetOut": "ETH",
-  "maxSpend": "1000",
-  "minOutput": "0.48",
-  "recipient": "0xTreasury",
-  "deadline": 1757466060
-}
-```
-
-The system must validate the resulting mandate before execution.
-
----
-
-## 12. Step 4 — Commitment Creation
-
-The backend creates a commitment identifier.
-
-Example:
-- `commitmentId`: `0x8f...91`
-
-The commitment should become immutable once activated, except for explicitly supported cancellation paths.
-
-The purpose is to prevent:
-
-```text
-Promise created
-      ↓
-Agent changes promise
-      ↓
-Execution
-      ↓
-"Success"
-```
-
-The evaluated commitment must be the same commitment the agent accepted.
-
----
-
-## 13. Step 5 — Agent Bond
-
-The agent deposits collateral.
-
-Example:
-- **Commitment value:** $1,000
-- **Agent bond:** $100
-
-The bond contract records:
-- `commitmentId`
-- `agent`
-- `bondAmount`
-- `token`
-- `status`
-
-The commitment cannot become active until the required bond exists.
-
----
-
-## 14. Step 6 — Privy Authorization
-
-Once the commitment is established:
-
-```text
-COMMITMENT
-     ↓
-AUTHORIZED ACTION
-     ↓
-PRIVY
-```
-
-Privy is the authorization boundary.
-
-The system should ensure the transaction being authorized corresponds to the commitment.
-
-For the MVP, the exact implementation mechanism can be finalized in `07_PRIVY_INTEGRATION_SPEC.md`.
-
-The important architectural rule is:
-
-> Privy authorizes the execution; CredibleExec evaluates its outcome.
-
----
-
-## 15. Step 7 — 1inch Execution
-
-The execution layer receives the required trade.
-
-Conceptually:
-
-```text
-USDC
- ↓
-1inch
- ↓
-ETH
- ↓
-Required recipient
-```
-
-The system stores the resulting transaction hash:
-- `txHash`
-
-The transaction hash becomes the link between:
-
-```text
-Commitment
-       ↓
-Execution
-       ↓
-Blockchain evidence
-```
-
----
-
-## 16. Step 8 — Blockchain as Evidence Source
-
-After execution, the system must retrieve actual transaction results.
-
-The blockchain should be treated as the source of truth for:
-- transaction success/failure
-- actual token transfers
-- amounts
-- recipient
-- timestamps/block information
-
-Do not rely solely on:
-> agent says: "I received 0.48 ETH"
-
-Instead:
-
-```text
-Blockchain
-    ↓
-Observed transfers
-    ↓
-Actual execution result
-```
-
----
-
-## 17. Step 9 — Outcome Verification
-
-The verifier receives:
-- Mandate
-- Transaction evidence
-
-It evaluates objective conditions.
-
-Example:
-
-```typescript
-const fulfilled =
-    actualSpend <= mandate.maxSpend &&
-    actualOutput >= mandate.minOutput &&
-    actualRecipient === mandate.recipient &&
-    executionTime <= mandate.deadline;
-```
-
-Result:
-- **FULFILLED**
-
-or:
-- **FAILED**
-
-The verifier should additionally produce failure reasons.
-
-Example:
-
-```json
-{
-  "status": "FAILED",
-  "reasons": [
-    "MIN_OUTPUT_NOT_MET"
-  ]
-}
-```
-
-This will be valuable for the UI.
-
----
-
-## 18. Step 10 — Settlement
-
-The verifier result feeds into settlement.
-
-**Success**
-
-```text
-VERIFIER
-   ↓
-PASS
-   ↓
-SETTLEMENT
-   ↓
-RELEASE BOND
-```
-
-**Failure**
-
-```text
-VERIFIER
-   ↓
-FAIL
-   ↓
-SETTLEMENT
-   ↓
-SLASH BOND
-```
-
-Settlement must be idempotent.
-
-A commitment must never be settled twice.
-
----
-
-## 19. API Boundary
-
-The frontend should communicate with a backend/service layer rather than directly orchestrating everything.
-
-Conceptually:
-
-```text
-Frontend
-   │
-   ▼
-API
-   │
-   ├── Agent
-   ├── Commitment
-   ├── Execution
-   ├── Verification
-   └── Settlement
-```
-
-Suggested API surface:
-
-```text
-POST /api/mandates
-POST /api/commitments
-GET  /api/commitments/:id
-POST /api/commitments/:id/activate
-POST /api/commitments/:id/execute
-GET  /api/commitments/:id/status
-POST /api/commitments/:id/settle
-```
-
-These endpoints are conceptual.
-
-The exact API contract will be defined later.
-
----
-
-## 20. Recommended Repository Structure
-
-The coding agent should eventually produce a structure approximately like:
-
-```text
-credibleexec/
-│
-├── apps/
-│   └── web/
-│
-├── contracts/
-│   └── CredibleExecBond.sol
-│
-├── packages/
-│   ├── mandate/
-│   ├── verifier/
-│   ├── execution/
-│   └── shared/
-│
-├── services/
-│   ├── agent/
-│   ├── commitment/
-│   ├── verifier/
-│   └── settlement/
-│
-├── tests/
-│   ├── contracts/
-│   ├── mandate/
-│   ├── verifier/
-│   └── integration/
-│
-└── docs/
-```
-
-This is a logical target, not an instruction to build every directory immediately.
-
----
-
-## 21. Smart Contract Boundary
-
-The smart contract should remain intentionally small.
-
-Its responsibility is economic custody and settlement.
-
-Conceptual interface:
-
-```solidity
-createCommitment(...)
-depositBond(...)
-activateCommitment(...)
-settleSuccess(...)
-settleFailure(...)
-cancelCommitment(...)
-```
-
-The contract should not:
-- call an LLM
-- call 1inch APIs
-- parse natural language
-- calculate AI reasoning
-- perform complex offchain verification
-- become a general-purpose trading contract
-
----
-
-## 22. Offchain vs Onchain Responsibilities
-
-This distinction is critical.
-
-| Function | Location |
-| --- | --- |
-| Natural-language interpretation | Offchain |
-| AI reasoning | Offchain |
-| Bazantic workflow | Offchain |
-| Mandate construction | Offchain |
-| UI | Offchain |
-| Quote retrieval | Offchain |
-| 1inch orchestration | Offchain |
-| Bond custody | Onchain |
-| Commitment settlement state | Onchain |
-| Actual transaction | Onchain |
-| Transaction evidence | Blockchain |
-| Outcome calculation | Initially offchain/deterministic |
-| Final bond transfer | Onchain |
-
-The MVP should not attempt to force everything onchain.
-
----
-
-## 23. MVP Trust Model
-
-We must be technically honest.
-
-The MVP may contain trusted offchain infrastructure, especially around:
-- evidence collection
-- verifier execution
-- settlement triggering
-
-Therefore the MVP should not claim:
-> "Fully trustless autonomous financial accountability."
-
-Instead:
-> "CredibleExec uses deterministic outcome verification and onchain collateral settlement."
-
-If the verifier is centralized in the MVP, document that honestly.
-
----
-
-## 24. Future Trust-Minimization Path
-
-The architecture should leave room for:
-
-**MVP**
-
-```text
-Single verifier
-```
-
-**Future**
-
-```text
-Multiple independent verifiers
-     ↓
-Quorum
-     ↓
-Settlement
-```
-
-Potential future architecture:
-
-```text
-                TRANSACTION
-                     │
-          ┌──────────┼──────────┐
-          ▼          ▼          ▼
-      Verifier A  Verifier B  Verifier C
-          │          │          │
-          └──────────┼──────────┘
-                     ▼
-                   QUORUM
-                     │
-                     ▼
-                 SETTLEMENT
-```
-
-This is an extension, not MVP scope.
-
----
-
-## 25. Future Architecture Hooks
-
-The system should be designed so the following can eventually plug into the same commitment model.
-
-### Multiple asset types
-- USDC → ETH
-- USDC → USDT
-- ETH → USDC
-
-### Multiple execution venues
-
-Instead of:
-
-```text
-Commitment → 1inch
-```
-
-future architecture can support:
-
-```text
-Commitment
-     ↓
-Execution Router
-     ├── 1inch
-     ├── Other DEX
-     └── Payment Rail
-```
-
-### Recurring commitments
-
-```text
-Commitment
-     ↓
-Schedule
-     ↓
-Execution
-     ↓
-Settlement
-     ↓
-Next execution
-```
-
-### Reputation
-
-The settlement engine can emit historical results:
-- FULFILLED
-- FAILED
-- FULFILLED
-- FULFILLED
-
-which can later feed an agent reputation system.
-
-### Agent marketplace
-
-The commitment layer can become the foundation for:
-
-```text
-User
- ↓
-Choose Agent
- ↓
-Agent Posts Bond
- ↓
-Execute
- ↓
-Settle
-```
-
----
-
-## 26. Future Architecture: Agent Reputation
-
-A future reputation service could consume settlement events:
-
-```text
-Settlement Event
-       ↓
-Reputation Engine
-       ↓
-Agent History
-```
-
-Example:
-
-```text
-Agent: AlphaExec
-
-Fulfilled:       194
-Failed:            6
-Success rate:   97%
-Total bonded:  $21,400
-```
-
-The core system should therefore emit structured settlement events.
-
----
-
-## 27. Future Architecture: Agent Marketplace
-
-Potential future flow:
+CredibleExec revolves around this relationship:
 
 ```text
 USER
  │
- │ mandate
- ▼
-AGENT MARKETPLACE
- │
- ├── Agent A
- ├── Agent B
- └── Agent C
-       │
-       ▼
- selected agent
-       │
-       ▼
- CredibleExec
-```
-
-Agents compete on:
-- reliability
-- collateral
-- fees
-- execution speed
-- supported mandates
-
----
-
-## 28. Future Architecture: Business Treasury
-
-The same commitment abstraction can support:
-
-```text
-Business
-   ↓
-Treasury Mandate
-   ↓
-Agent
-   ↓
-Bond
-   ↓
-Execution
-   ↓
-Settlement
-```
-
-Example:
-> "Pay our supplier 10,000 USDC before 5 PM."
-
-The architecture remains:
-
-```text
-Mandate
-+
-Bond
-+
-Execution
-+
-Verification
-+
-Settlement
-```
-
-Only the mandate types change.
-
----
-
-## 29. Future Architecture: Compound Commitments
-
-The MVP has four core constraints.
-
-Future commitments may support:
-
-```typescript
-conditions: [
-    MaxSpend,
-    MinOutput,
-    Recipient,
-    Deadline,
-    AllowedVenue,
-    SlippageLimit,
-    PriceRange,
-    AssetRestriction
-]
-```
-
-This turns the commitment system into a general financial mandate engine.
-
----
-
-## 30. Failure Architecture
-
-Every failure must have an explicit source.
-
-```text
-                   EXECUTION
-                       │
-              ┌────────┼────────┐
-              ▼        ▼        ▼
-           AGENT    PROTOCOL   EXTERNAL
-           ERROR     ERROR      ERROR
-              │        │          │
-              ▼        ▼          ▼
-            SLASH    DEFINE     NO AUTO
-                     POLICY     SLASH
-```
-
-The implementation should never blindly execute:
-
-```text
-transaction != expected
-       ↓
-SLASH
-```
-
-without classifying the failure.
-
-The exact failure taxonomy will be defined in `14_FAILURE_HANDLING_SPEC.md`.
-
----
-
-## 31. Security Boundary
-
-The architecture must protect against:
-
-### Commitment modification
-An active commitment must not be silently changed.
-
-### Bond theft
-Only authorized settlement paths may release/slash collateral.
-
-### Double settlement
-A commitment may only transition once into a terminal state.
-
-### Fake evidence
-The verifier must use independently obtained transaction data.
-
-### Wrong transaction
-The transaction evaluated must correspond to the commitment.
-
-### Unauthorized execution
-Execution must pass through the intended authorization boundary.
-
----
-
-## 32. Event-Driven Architecture
-
-The bond contract should emit events that allow the rest of the system to track lifecycle.
-
-Conceptually:
-
-```solidity
-event CommitmentCreated(...);
-event BondDeposited(...);
-event CommitmentActivated(...);
-event CommitmentFulfilled(...);
-event CommitmentFailed(...);
-event BondReleased(...);
-event BondSlashed(...);
-```
-
-This will become especially useful for future:
-- reputation
-- analytics
-- dashboards
-- indexing
-- agent history
-- marketplace ranking
-
----
-
-## 33. MVP vs Future Architecture
-
-| Area | MVP | Future |
-| --- | --- | --- |
-| **Chain** | One | Multi-chain |
-| **Asset** | USDC/ETH | Multiple assets |
-| **Agent** | One | Agent marketplace |
-| **Bond** | Fixed/simple | Dynamic |
-| **Verification** | Deterministic | Multi-verifier |
-| **Execution** | 1inch | Multiple venues |
-| **Commitments** | One-shot | Recurring |
-| **Reputation** | Basic history | Full reputation |
-| **Users** | Individual | Businesses/DAOs |
-| **Disputes** | Limited | Optimistic challenges |
-| **UI** | Simple flow | Advanced dashboard |
-| **Analytics** | Basic | Full analytics |
-| **Governance** | None | Potentially DAO |
-| **ZK/TEE** | None | Optional future research |
-
----
-
-## 34. Critical Architecture Rule
-
-Do not build the future architecture into the MVP.
-
-Instead:
-
-> Build interfaces that allow the future architecture to plug in.
-
-For example:
-
-**Bad:**
-- Verifier = hardcoded giant function
-
-**Better:**
-
-```typescript
-interface OutcomeVerifier {
-    verify(
-        mandate: Mandate,
-        evidence: ExecutionEvidence
-    ): VerificationResult;
-}
-```
-
-The MVP can have:
-- `DeterministicVerifier`
-
-Later:
-- `MultiVerifier`
-- `OptimisticVerifier`
-- `ZKVerifier`
-
-without redesigning the entire application.
-
----
-
-## 35. Suggested Internal Interfaces
-
-These interfaces should eventually exist conceptually.
-
-```typescript
-interface MandateCompiler {
-    compile(request: string): Mandate;
-}
-
-interface ExecutionProvider {
-    execute(
-        mandate: Mandate
-    ): ExecutionResult;
-}
-
-interface OutcomeVerifier {
-    verify(
-        mandate: Mandate,
-        evidence: ExecutionEvidence
-    ): VerificationResult;
-}
-
-interface SettlementProvider {
-    settle(
-        commitmentId: string,
-        result: VerificationResult
-    ): SettlementResult;
-}
-```
-
-This gives the project modularity without overengineering.
-
----
-
-## 36. Complete MVP Sequence
-
-The coding agent should eventually implement this exact sequence:
-
-```text
-USER
- │
- │ natural-language request
+ │ creates request
  ▼
 AGENT
  │
- │ structured intent
+ │ interprets request
  ▼
-MANDATE COMPILER
+MANDATE
  │
- │ validated mandate
+ │ becomes accepted commitment
  ▼
 COMMITMENT
  │
- │ bond requirement
- ▼
-BOND CONTRACT
- │
- │ agent collateral locked
- ▼
-PRIVY
- │
- │ authorized execution
- ▼
-1INCH
- │
- │ transaction
- ▼
-BLOCKCHAIN
- │
- │ actual evidence
- ▼
-VERIFIER
- │
- ├──────────────┐
- ▼              ▼
-PASS            FAIL
- │              │
- ▼              ▼
-RELEASE         SLASH
-BOND            BOND
- │              │
- └──────┬───────┘
-        ▼
-      FRONTEND
-        │
-        ▼
-   FINAL RESULT
+ ├───────────────┐
+ ▼               ▼
+BOND          EXECUTION
+                 │
+                 ▼
+          EXECUTION EVIDENCE
+                 │
+                 ▼
+             VERIFICATION
+                 │
+                 ▼
+             SETTLEMENT
 ```
 
----
-
-## 37. What the Coding Agent Must Build First
-
-After receiving this document, the coding agent must not start implementing every component.
-
-The implementation should proceed according to subsequent specifications.
-
-The immediate next implementation specification will define the domain model.
-
-Therefore:
-
-> Do not make architectural assumptions that aren't defined in the subsequent documents.
+The distinction between these objects is important.
 
 ---
 
-## 38. Architecture Acceptance Criteria
+## 3. Domain Objects
 
-Before proceeding to implementation, this architecture is considered correct only if:
-
-- User funds and agent collateral are separate.
-- Commitment is the central domain object.
-- Agent cannot modify an activated commitment.
-- Privy is the authorization layer.
-- 1inch is the execution layer.
-- Blockchain provides execution evidence.
-- Verifier is deterministic.
-- LLM does not determine final settlement.
-- Bond contract controls collateral.
-- Settlement cannot happen twice.
-- Success releases collateral.
-- Agent-attributable failure can slash collateral.
-- External failures are not blindly punished.
-- MVP remains one chain / one primary workflow.
-- Future capabilities can plug into the commitment model.
-- The frontend does not expose unnecessary blockchain complexity.
-
----
-
-## 39. Architecture North Star
-
-The system can ultimately be understood as five layers:
-
-```text
-┌─────────────────────────────────────┐
-│              EXPERIENCE             │
-│       User + Natural Language       │
-├─────────────────────────────────────┤
-│              INTELLIGENCE            │
-│          Agent + Bazantic            │
-├─────────────────────────────────────┤
-│             COMMITMENT              │
-│       Mandate + Bond + Rules        │
-├─────────────────────────────────────┤
-│              EXECUTION              │
-│          Privy + 1inch              │
-├─────────────────────────────────────┤
-│             ACCOUNTABILITY           │
-│       Blockchain + Verification     │
-│             + Settlement             │
-└─────────────────────────────────────┘
-```
-
-The most important architectural layer is the middle:
-
-> **COMMITMENT**
-
-Because that's where CredibleExec differentiates itself.
-
----
-
-## 40. Final Implementation Principle
-
-The architecture should make this sentence literally true:
-
-> The agent proposes what it will do, the user authorizes it, the agent puts collateral behind the promise, the transaction happens, and the system independently checks whether the promise was fulfilled.
-
-That is the complete technical story of CredibleExec.
-
----
-
-### Next: `03_DOMAIN_MODEL.md`
-
-This is where we should get much more precise.
-
-We'll define every object the coding agent will use:
+The MVP contains these primary objects:
 - User
 - Agent
 - Wallet
@@ -1357,6 +76,1273 @@ We'll define every object the coding agent will use:
 - VerificationResult
 - Settlement
 
-including their exact fields, types, relationships, lifecycle/state machine, IDs, validation rules, onchain/offchain ownership, and future-extension fields.
+Not every object needs to become a database table or smart-contract struct.
 
-That document is the point where we move from "what we're building" to "exactly what data the code must represent."
+Some are logical domain objects.
+
+---
+
+## 4. User
+
+Represents the person initiating a financial request.
+
+```typescript
+type User = {
+    id: string;
+
+    walletAddress: Address;
+
+    createdAt: number;
+};
+```
+
+**MVP**
+
+Only the following are important:
+- `id`
+- `walletAddress`
+
+Authentication details belong to Privy.
+
+Do not create a custom authentication system unless required.
+
+---
+
+## 5. Agent
+
+Represents the autonomous execution agent.
+
+```typescript
+type Agent = {
+    id: string;
+
+    name: string;
+
+    walletAddress: Address;
+
+    bondToken: Address;
+
+    reputation?: AgentReputation;
+};
+```
+
+For MVP:
+- `id`
+- `name`
+- `walletAddress`
+- `bondToken`
+
+is sufficient.
+
+---
+
+## 6. Agent Identity vs Agent Wallet
+
+These are conceptually different.
+
+```text
+Agent Identity
+      │
+      ▼
+Agent Wallet
+```
+
+The identity represents:
+> "Which agent/provider is making this commitment?"
+
+The wallet represents:
+> "Where does the agent's collateral come from?"
+
+This distinction becomes important when we later support multiple agents or agent operators.
+
+---
+
+## 7. Wallet
+
+Wallets should not be treated as the same thing as users or agents.
+
+```typescript
+type Wallet = {
+    address: Address;
+
+    ownerType: "USER" | "AGENT";
+
+    ownerId: string;
+
+    provider: "PRIVY";
+
+    chainId: number;
+};
+```
+
+Example:
+
+User Wallet
+`0xABC...`
+
+Owner:
+`USER:user_123`
+
+Agent bond wallet:
+
+Agent Wallet
+`0xDEF...`
+
+Owner:
+`AGENT:agent_001`
+
+---
+
+## 8. Mandate
+
+The Mandate represents what the user wants the agent to accomplish.
+
+This is the semantic layer.
+
+Example:
+> "Swap $1,000 USDC for ETH and send it to my treasury. Get at least 0.48 ETH within 60 seconds."
+
+becomes:
+
+```typescript
+type Mandate = {
+    id: string;
+
+    principalToken: Address;
+    principalAmount: bigint;
+
+    targetToken: Address;
+
+    maxSpend: bigint;
+    minOutput: bigint;
+
+    recipient: Address;
+
+    deadline: number;
+
+    executionVenue?: string;
+};
+```
+
+---
+
+## 9. Mandate vs Commitment
+
+This distinction is extremely important.
+
+- **Mandate:** What the user wants accomplished.
+- **Commitment:** What the agent formally accepts responsibility for accomplishing.
+
+Conceptually:
+
+```text
+USER REQUEST
+     ↓
+MANDATE
+     ↓
+AGENT ACCEPTS
+     ↓
+COMMITMENT
+```
+
+The commitment should reference the mandate that produced it.
+
+---
+
+## 10. Commitment
+
+This is the central object in CredibleExec.
+
+```typescript
+type Commitment = {
+    id: string;
+
+    mandateId: string;
+
+    agentId: string;
+
+    agentWallet: Address;
+
+    principalToken: Address;
+
+    principalAmount: bigint;
+
+    targetToken: Address;
+
+    maxSpend: bigint;
+
+    minOutput: bigint;
+
+    recipient: Address;
+
+    deadline: number;
+
+    bondAmount: bigint;
+
+    bondToken: Address;
+
+    status: CommitmentStatus;
+
+    createdAt: number;
+
+    activatedAt?: number;
+
+    completedAt?: number;
+};
+```
+
+---
+
+## 11. Commitment Status
+
+The MVP state machine is:
+
+```text
+CREATED
+   │
+   ▼
+FUNDED
+   │
+   ▼
+ACTIVE
+   │
+   ├─────────────┐
+   ▼             ▼
+FULFILLED       FAILED
+   │             │
+   └──────┬──────┘
+          ▼
+       TERMINAL
+```
+
+Additional states:
+- `EXPIRED`
+- `CANCELLED`
+- `EXTERNAL_FAILURE`
+
+should exist conceptually but should only be implemented where needed.
+
+---
+
+## 12. State Definitions
+
+### CREATED
+
+Commitment exists but the agent has not deposited the required bond.
+
+```text
+Commitment
+    ↓
+Bond missing
+```
+
+### FUNDED
+
+Agent collateral has been deposited.
+
+```text
+Commitment
+    +
+Bond
+    ↓
+FUNDED
+```
+
+The commitment is now economically backed.
+
+### ACTIVE
+
+The commitment is ready for execution.
+
+```text
+Bond locked
++
+Mandate immutable
++
+Authorization ready
+```
+
+### FULFILLED
+
+The verifier has determined:
+> `mandate conditions == satisfied`
+
+The bond becomes eligible for release.
+
+### FAILED
+
+The verifier determined that the agent's commitment was violated.
+
+The bond becomes eligible for slashing.
+
+### EXPIRED
+
+The deadline passed without a valid completion.
+
+Whether expiration results in slashing depends on the failure classification and exact commitment terms.
+
+Do not automatically treat every timeout as malicious agent failure.
+
+### CANCELLED
+
+The commitment was explicitly cancelled through an authorized path.
+
+---
+
+## 13. Commitment State Transition Rules
+
+Allowed transitions:
+
+```text
+CREATED → FUNDED
+FUNDED → ACTIVE
+ACTIVE → FULFILLED
+ACTIVE → FAILED
+ACTIVE → EXPIRED
+CREATED → CANCELLED
+FUNDED → CANCELLED
+```
+
+Disallowed:
+
+```text
+FULFILLED → ACTIVE
+FAILED → ACTIVE
+FULFILLED → FAILED
+FAILED → FULFILLED
+```
+
+Terminal states must remain terminal.
+
+---
+
+## 14. Bond
+
+The bond represents collateral posted by the agent.
+
+```typescript
+type Bond = {
+    commitmentId: string;
+
+    token: Address;
+
+    amount: bigint;
+
+    depositor: Address;
+
+    contractAddress: Address;
+
+    status: BondStatus;
+
+    depositedAt: number;
+};
+```
+
+Status:
+
+```typescript
+type BondStatus =
+    | "PENDING"
+    | "LOCKED"
+    | "RELEASED"
+    | "SLASHED";
+```
+
+---
+
+## 15. Bond Invariant
+
+The bond must belong economically to the agent.
+
+Therefore:
+
+> **User principal ≠ Agent bond**
+
+Example:
+
+Principal:
+- 1,000 USDC
+
+Bond:
+- 100 USDC
+
+The system must never silently use:
+> 1,100 USDC
+
+from the user and pretend $100 belongs to the agent.
+
+---
+
+## 16. Execution
+
+Represents the actual financial transaction attempt.
+
+```typescript
+type Execution = {
+    id: string;
+
+    commitmentId: string;
+
+    transactionHash?: string;
+
+    chainId: number;
+
+    executionProvider: string;
+
+    status: ExecutionStatus;
+
+    startedAt?: number;
+
+    completedAt?: number;
+};
+```
+
+Status:
+
+```typescript
+type ExecutionStatus =
+    | "PENDING"
+    | "SUBMITTED"
+    | "CONFIRMED"
+    | "REVERTED"
+    | "UNKNOWN";
+```
+
+---
+
+## 17. Execution vs Commitment
+
+A commitment is the promise.
+
+An execution is the attempt to fulfill the promise.
+
+Therefore:
+
+```text
+COMMITMENT
+"I promise to achieve X."
+
+        ↓
+
+EXECUTION
+"I attempted X."
+
+        ↓
+
+EVIDENCE
+"Here is what actually happened."
+
+        ↓
+
+VERIFICATION
+"X was / was not achieved."
+```
+
+This separation is essential.
+
+---
+
+## 18. Execution Evidence
+
+Evidence represents facts extracted from the blockchain transaction.
+
+```typescript
+type ExecutionEvidence = {
+    executionId: string;
+
+    transactionHash: string;
+
+    chainId: number;
+
+    success: boolean;
+
+    actualSpend: bigint;
+
+    actualOutput: bigint;
+
+    outputToken: Address;
+
+    recipient: Address;
+
+    blockNumber?: bigint;
+
+    timestamp?: number;
+
+    transfers?: TokenTransfer[];
+};
+```
+
+---
+
+## 19. Token Transfer
+
+A normalized transfer representation:
+
+```typescript
+type TokenTransfer = {
+    token: Address;
+
+    from: Address;
+
+    to: Address;
+
+    amount: bigint;
+};
+```
+
+This allows the verifier to reason about actual movement of assets.
+
+---
+
+## 20. Why Evidence Must Be Separate
+
+Do not pass raw blockchain responses directly into the verifier.
+
+Instead:
+
+```text
+Blockchain RPC / Indexer
+        ↓
+Evidence Extractor
+        ↓
+Normalized ExecutionEvidence
+        ↓
+Verifier
+```
+
+This makes the verifier:
+- easier to test
+- easier to reason about
+- easier to replace
+- less dependent on one blockchain API
+
+---
+
+## 21. Verification Result
+
+The verifier produces:
+
+```typescript
+type VerificationResult = {
+    commitmentId: string;
+
+    status: "PASS" | "FAIL";
+
+    reasons: VerificationFailureReason[];
+
+    actualSpend: bigint;
+
+    actualOutput: bigint;
+
+    actualRecipient: Address;
+
+    verifiedAt: number;
+};
+```
+
+---
+
+## 22. Failure Reasons
+
+Use explicit machine-readable reasons.
+
+```typescript
+type VerificationFailureReason =
+    | "MAX_SPEND_EXCEEDED"
+    | "MIN_OUTPUT_NOT_MET"
+    | "WRONG_RECIPIENT"
+    | "DEADLINE_EXCEEDED"
+    | "TRANSACTION_REVERTED"
+    | "INVALID_EXECUTION"
+    | "INSUFFICIENT_EVIDENCE"
+    | "EXTERNAL_FAILURE";
+```
+
+This is preferable to:
+> `failureReason = "something went wrong"`
+
+because the frontend can explain the exact failure.
+
+---
+
+## 23. Settlement
+
+Settlement represents the economic conclusion.
+
+```typescript
+type Settlement = {
+    id: string;
+
+    commitmentId: string;
+
+    verificationResult: "PASS" | "FAIL";
+
+    bondAction: "RELEASE" | "SLASH" | "HOLD";
+
+    transactionHash?: string;
+
+    settledAt: number;
+};
+```
+
+---
+
+## 24. Settlement Rules
+
+```text
+PASS
+VerificationResult = PASS
+        ↓
+BondAction = RELEASE
+
+Agent-attributable FAIL
+VerificationResult = FAIL
+        ↓
+BondAction = SLASH
+
+External failure
+VerificationResult = EXTERNAL_FAILURE
+        ↓
+BondAction = HOLD / RETURN
+```
+
+The exact economics will be finalized in the smart-contract specification.
+
+---
+
+## 25. Complete Object Relationship
+
+The complete MVP relationship is:
+
+```text
+USER
+ │
+ └──── creates ────► MANDATE
+                         │
+                         │ accepted by
+                         ▼
+                       AGENT
+                         │
+                         ▼
+                    COMMITMENT
+                    /                             /                              ▼              ▼
+                BOND          EXECUTION
+                                  │
+                                  ▼
+                         EXECUTION EVIDENCE
+                                  │
+                                  ▼
+                             VERIFICATION
+                                  │
+                                  ▼
+                             SETTLEMENT
+                                  │
+                         ┌────────┴────────┐
+                         ▼                 ▼
+                     RELEASE             SLASH
+```
+
+---
+
+## 26. Database Model
+
+The MVP does not require a massive database.
+
+A relational representation could contain:
+- `users`
+- `agents`
+- `mandates`
+- `commitments`
+- `bonds`
+- `executions`
+- `execution_evidence`
+- `settlements`
+
+Relationships:
+
+```text
+users
+  │
+  └── mandates
+
+mandates
+  │
+  └── commitments
+
+agents
+  │
+  └── commitments
+
+commitments
+  ├── bond
+  ├── execution
+  └── settlement
+```
+
+---
+
+## 27. Suggested Database Fields
+
+### `users`
+- `id`
+- `wallet_address`
+- `created_at`
+
+### `agents`
+- `id`
+- `name`
+- `wallet_address`
+- `created_at`
+
+### `mandates`
+- `id`
+- `asset_in`
+- `asset_out`
+- `principal_amount`
+- `max_spend`
+- `min_output`
+- `recipient`
+- `deadline`
+- `execution_venue`
+- `created_at`
+
+### `commitments`
+- `id`
+- `mandate_id`
+- `agent_id`
+- `bond_amount`
+- `bond_token`
+- `status`
+- `created_at`
+- `activated_at`
+- `completed_at`
+
+### `executions`
+- `id`
+- `commitment_id`
+- `tx_hash`
+- `chain_id`
+- `provider`
+- `status`
+- `started_at`
+- `completed_at`
+
+### `execution_evidence`
+- `id`
+- `execution_id`
+- `actual_spend`
+- `actual_output`
+- `output_token`
+- `recipient`
+- `block_number`
+- `timestamp`
+
+### `settlements`
+- `id`
+- `commitment_id`
+- `verification_status`
+- `bond_action`
+- `tx_hash`
+- `settled_at`
+
+---
+
+## 28. Onchain vs Offchain Data
+
+Not every field needs to exist onchain.
+
+### Onchain
+
+The bond contract should minimally know:
+- `commitmentId`
+- `agent`
+- `bondToken`
+- `bondAmount`
+- `status`
+
+And enough mandate information to ensure the settlement references the correct commitment.
+
+### Offchain
+
+The backend can maintain:
+- `naturalLanguageRequest`
+- agent reasoning
+- UI metadata
+- execution metadata
+- evidence normalization
+- verification details
+- analytics
+
+The exact contract storage design will be finalized in Document 04.
+
+---
+
+## 29. Commitment Immutability
+
+Once a commitment becomes ACTIVE, the conditions being evaluated must not change.
+
+For example:
+
+Before:
+- `minOutput` = 0.48 ETH
+
+must not become:
+
+After execution:
+- `minOutput` = 0.45 ETH
+
+This would destroy the meaning of the commitment.
+
+Therefore:
+
+The evaluated mandate must be cryptographically or otherwise securely bound to the activated commitment.
+
+The exact mechanism will be specified in the smart-contract document.
+
+---
+
+## 30. Commitment ID
+
+Every commitment needs a unique identifier.
+
+Recommended conceptual format:
+- `commitmentId`
+
+rather than relying solely on:
+- `transactionHash`
+
+because a commitment can exist before a transaction exists.
+
+Relationship:
+
+```text
+commitmentId
+      │
+      ├── bond
+      ├── execution
+      ├── evidence
+      └── settlement
+```
+
+---
+
+## 31. Commitment Hash
+
+A future-friendly architecture should support a canonical commitment representation.
+
+Conceptually:
+
+```typescript
+commitmentHash =
+    hash(
+        assetIn,
+        assetOut,
+        maxSpend,
+        minOutput,
+        recipient,
+        deadline,
+        agent
+    );
+```
+
+This allows the system to prove that:
+> "The commitment evaluated later is the same commitment accepted earlier."
+
+Do not overcomplicate the hashing mechanism at this stage.
+
+The exact encoding will be defined in Document 04.
+
+---
+
+## 32. Natural Language Is Not the Source of Truth
+
+This is a major design rule.
+
+The following:
+> "Please get me the best possible ETH price."
+
+is not directly verifiable.
+
+Therefore the agent must convert natural language into explicit conditions.
+
+For example:
+
+```text
+User request
+      ↓
+Agent interpretation
+      ↓
+Structured mandate
+      ↓
+User confirmation
+      ↓
+Commitment
+```
+
+Once confirmed, the structured commitment—not the original sentence—is the settlement authority.
+
+---
+
+## 33. Validation Rules
+
+Before creating a commitment:
+
+### Required
+- `assetIn` exists
+- `assetOut` exists
+- `principalAmount` > 0
+- `maxSpend` > 0
+- `minOutput` > 0
+- `recipient` is valid
+- `deadline` is in the future
+- `bondAmount` > 0
+
+### Logical validation
+- `maxSpend` >= `principalAmount`
+
+where appropriate.
+
+Also ensure:
+- `recipient` != zero address
+
+and:
+- `deadline` > current time
+
+---
+
+## 34. Dangerous Mandates
+
+The compiler should reject or require clarification for ambiguous requests.
+
+Example:
+> "Get me a good ETH price."
+
+There is no objective success criterion.
+
+The system should respond:
+> "What is the minimum amount of ETH you want to receive?"
+
+rather than inventing:
+- `minOutput` = 0.48 ETH
+
+---
+
+## 35. User Confirmation Boundary
+
+The system should not silently transform an ambiguous request into an executable commitment.
+
+The correct sequence is:
+
+```text
+Natural Language
+      ↓
+AI Interpretation
+      ↓
+Structured Mandate
+      ↓
+USER REVIEWS
+      ↓
+CONFIRM
+      ↓
+COMMITMENT
+```
+
+This is an important UX and security boundary.
+
+---
+
+## 36. Future: Mandate Types
+
+The MVP supports essentially one mandate type:
+- `SWAP`
+
+Future types can include:
+
+```typescript
+type MandateType =
+    | "SWAP"
+    | "PAYMENT"
+    | "TRANSFER"
+    | "PAYROLL"
+    | "DCA"
+    | "YIELD"
+    | "CROSS_CHAIN"
+    | "CUSTOM";
+```
+
+The core commitment system should not need to change dramatically when these are introduced.
+
+---
+
+## 37. Future: Condition Model
+
+The MVP uses explicit fields:
+- `maxSpend`
+- `minOutput`
+- `recipient`
+- `deadline`
+
+Future architecture can generalize these into:
+
+```typescript
+type Condition = {
+    type: ConditionType;
+    operator: Operator;
+    value: unknown;
+};
+```
+
+Example:
+- `MAX_SPEND` <= 10,000
+- `MIN_OUTPUT` >= 4.8
+- `DEADLINE` <= 60s
+- `RECIPIENT` == TreasuryA
+
+This could eventually make CredibleExec a generic financial mandate engine.
+
+Do not implement this generalized condition framework in the MVP unless needed.
+
+---
+
+## 38. Future: Reputation Model
+
+The domain model should eventually support:
+
+```typescript
+type AgentReputation = {
+    fulfilledCommitments: number;
+
+    failedCommitments: number;
+
+    totalBonded: bigint;
+
+    totalSlashed: bigint;
+
+    fulfillmentRate: number;
+};
+```
+
+The data should be derived from actual settlement history.
+
+Not:
+- 5-star user ratings
+
+as the primary reliability metric.
+
+---
+
+## 39. Future: Dynamic Bond
+
+Eventually:
+- `bondAmount`
+
+may be calculated from:
+- transaction value
+- mandate risk
+- agent reputation
+- execution complexity
+
+But the MVP should use a simple explicit bond.
+
+Example:
+- Bond = 100 USDC
+
+---
+
+## 40. Future: Recurring Commitment
+
+A future commitment may contain:
+
+```typescript
+type Schedule = {
+    frequency: string;
+
+    nextExecution: number;
+
+    maxExecutions?: number;
+};
+```
+
+But the MVP must remain one-shot.
+
+---
+
+## 41. Future: Multiple Executions
+
+The current relationship is:
+
+```text
+Commitment
+    ↓
+Execution
+```
+
+Future:
+
+```text
+Commitment
+    │
+    ├── Execution 1
+    ├── Execution 2
+    └── Execution 3
+```
+
+This supports:
+- recurring execution
+- retries
+- multi-step workflows
+- fallback venues
+
+The MVP should retain the simpler one-to-one relationship.
+
+---
+
+## 42. Future: Agent Marketplace
+
+A future commitment can reference:
+- `agentId`
+
+which allows:
+
+```text
+User
+ ↓
+Mandate
+ ↓
+Agent selection
+ ↓
+Commitment
+```
+
+The commitment engine therefore becomes reusable regardless of how the agent was selected.
+
+---
+
+## 43. The Most Important Invariants
+
+These are rules that must never be violated.
+
+### Invariant 1
+A commitment cannot be settled twice.
+
+### Invariant 2
+An active commitment cannot have its financial conditions silently changed.
+
+### Invariant 3
+The user's principal is not the agent's collateral.
+
+### Invariant 4
+A bond cannot be released or slashed without an authorized settlement path.
+
+### Invariant 5
+Final verification cannot be determined solely by the LLM.
+
+### Invariant 6
+Settlement must reference the exact commitment being evaluated.
+
+### Invariant 7
+Natural-language interpretation must occur before commitment creation.
+
+### Invariant 8
+The user must be able to see and confirm the structured commitment before execution.
+
+---
+
+## 44. Complete MVP Data Flow
+
+Putting everything together:
+
+```text
+USER REQUEST
+     │
+     ▼
+┌──────────────┐
+│    MANDATE   │
+└──────┬───────┘
+       │
+       ▼
+┌────────────────┐
+│   COMMITMENT   │
+└───┬────────┬───┘
+    │        │
+    ▼        ▼
+  BOND    AUTHORIZATION
+             │
+             ▼
+          EXECUTION
+             │
+             ▼
+           EVIDENCE
+             │
+             ▼
+        VERIFICATION
+             │
+       ┌─────┴─────┐
+       ▼           ▼
+     PASS         FAIL
+       │           │
+       ▼           ▼
+   RELEASE        SLASH
+     BOND           BOND
+       │           │
+       └─────┬─────┘
+             ▼
+         SETTLEMENT
+```
+
+---
+
+## 45. Implementation Rules for the Coding Agent
+
+When implementing the application:
+
+### DO
+- Use strongly typed domain objects.
+- Keep commitment state transitions explicit.
+- Separate mandate from execution.
+- Separate evidence from verification.
+- Separate verification from settlement.
+- Use immutable commitment parameters after activation.
+- Give every commitment a unique ID.
+- Make settlement idempotent.
+- Keep future extension points modular.
+
+### DO NOT
+- Put all logic into one backend file.
+- Allow the LLM to directly control bond settlement.
+- use the transaction hash as the commitment identity.
+- store the entire system state only in frontend state.
+- couple the verifier directly to the 1inch implementation.
+- couple the commitment model directly to one specific UI.
+- implement recurring commitments now.
+- implement generalized condition DSL now.
+- implement reputation now.
+
+---
+
+## 46. Definition of Done
+
+The domain model is correctly implemented when:
+- User can be represented.
+- Agent can be represented.
+- Wallet ownership is explicit.
+- Mandate can be represented.
+- Commitment references a mandate and agent.
+- Bond references a commitment.
+- Execution references a commitment.
+- Evidence references an execution.
+- Verification references a commitment and evidence.
+- Settlement references verification.
+- Commitment states are explicit.
+- Invalid state transitions are rejected.
+- Commitment conditions cannot change after activation.
+- User principal and agent bond remain separate.
+- Future extensions can build around the same model.
+
+---
+
+## 47. Domain Model in One Sentence
+
+The entire data model can be summarized as:
+
+> **A user creates a mandate, an agent accepts it as a commitment backed by a bond, an execution produces blockchain evidence, a verifier evaluates that evidence against the commitment, and settlement releases or slashes the bond.**
