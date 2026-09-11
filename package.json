@@ -1,0 +1,15 @@
+{
+  "name": "credibleexec",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Accountability infrastructure for autonomous financial execution.",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check packages/core/src/index.js && node --check packages/mandate/src/index.js && node --check packages/verifier/src/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
+
