@@ -5,7 +5,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm --filter app dev",
+    "build": "pnpm contracts:build && pnpm --filter app build",
+    "lint": "pnpm --filter app lint",
+    "typecheck": "tsc --noEmit && pnpm --filter app typecheck",
+    "test": "tsx --test tests/*.test.ts",
+    "contracts:build": "tsx contracts/scripts/compile.ts",
+    "contracts:deploy": "tsx --env-file=app/.env.local contracts/scripts/deploy.ts",
+    "local:chain": "tsx scripts/local-chain.ts",
+    "local:demo": "tsx scripts/local-demo.ts",
+    "local:web": "tsx scripts/local-web.ts",
+    "recipe:generate": "tsx scripts/recipe-definition.ts",
+    "doctor": "tsx scripts/doctor.ts",
+    "test:browser": "tsx scripts/browser-check.ts"
   },
   "keywords": [],
   "author": "",
@@ -18,5 +30,17 @@
     }
   },
   "packageManager": "pnpm@12.4.1",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.2",
+    "ganache": "7.9.2",
+    "prettier": "^3.9.6",
+    "solc": "0.8.37",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "viem": "^2.56.3",
+    "zod": "^4.6.2"
+  }
 }

@@ -1,5 +1,14 @@
 packages:
-  - 'app'
-  - 'contracts'
+  - "app"
+  - "contracts"
+  - "packages/*"
 allowBuilds:
   unrs-resolver: true
+  esbuild: true
+  keccak: true
+  secp256k1: true
+  bufferutil: false
+  utf-8-validate: false
+  "@reown/appkit": false
+minimumReleaseAgeExclude:
+  - "@bazantic/cli@0.10.0"

@@ -1,9 +1,11 @@
 node_modules/
-coverage/
-dist/
+.next/
 .env
 .env.*
 !.env.example
-*.log
-.DS_Store
-
+*.sqlite*
+*.tsbuildinfo
+coverage/
+artifacts/
+.local/
+*-page.tmp
