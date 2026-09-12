@@ -1,0 +1,5 @@
+packages:
+  - 'app'
+  - 'contracts'
+allowBuilds:
+  unrs-resolver: true

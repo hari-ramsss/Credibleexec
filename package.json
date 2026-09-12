@@ -1,15 +1,22 @@
 {
-  "name": "credibleexec",
-  "version": "0.1.0",
+  "name": "Credibleexec",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "description": "Accountability infrastructure for autonomous financial execution.",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "test": "node --test",
-    "check": "node --check packages/core/src/index.js && node --check packages/mandate/src/index.js && node --check packages/verifier/src/index.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "engines": {
-    "node": ">=22"
-  }
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.4.1",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.4.1",
+  "type": "module"
 }
-
