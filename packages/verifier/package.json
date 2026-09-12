@@ -1,0 +1,1 @@
+{"name":"@credibleexec/verifier","private":true,"version":"0.1.0","type":"module","exports":"./src/verify.ts","dependencies":{"@credibleexec/domain":"workspace:*","viem":"^2.47.0"}}
