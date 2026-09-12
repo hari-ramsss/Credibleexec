@@ -1,0 +1,1 @@
+{"name":"@credibleexec/mandate","private":true,"version":"0.1.0","type":"module","exports":"./src/compiler.ts","dependencies":{"@credibleexec/domain":"workspace:*","viem":"^2.47.0","zod":"^4.0.0"}}
