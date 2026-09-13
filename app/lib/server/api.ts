@@ -82,8 +82,26 @@ export async function api(request: Request, path: string[]): Promise<Response> {
     );
     if (request.method === "POST") {
       const origin = request.headers.get("origin");
-      const allowed = process.env.APP_ORIGIN ?? new URL(request.url).origin;
-      if (origin && origin !== allowed)
+      const requestOrigin = new URL(request.url).origin;
+      const allowed = process.env.APP_ORIGIN ?? requestOrigin;
+      const isLoopback = (urlStr: string) => {
+        try {
+          const u = new URL(urlStr);
+          return u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "[::1]";
+        } catch {
+          return false;
+        }
+      };
+      const samePortLoopback = (a: string, b: string) => {
+        try {
+          const uA = new URL(a);
+          const uB = new URL(b);
+          return isLoopback(a) && isLoopback(b) && (uA.port || "80") === (uB.port || "80");
+        } catch {
+          return false;
+        }
+      };
+      if (origin && origin !== allowed && !samePortLoopback(origin, allowed) && !samePortLoopback(origin, requestOrigin))
         throw new AppError(
           "ORIGIN",
           "This request came from an unapproved origin.",
