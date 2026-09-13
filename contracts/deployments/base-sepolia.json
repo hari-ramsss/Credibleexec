@@ -1,0 +1,10 @@
+{
+  "chainId": 84532,
+  "contract": "0x2c0bbdfe4c4b39e2c8ab1999ebc0c0e8dfde9379",
+  "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "authority": "0xD68d0e0dA8f145d984e78902C6a91fb7001b4E49",
+  "owner": "0xC9E28666822c7f569121BC667AA9dC8B7c39aBf4",
+  "transactionHash": "0x9b25ab0fad5166e045008e3af5c3fe9ace89625faa8ec76522179a5eac01ccb3",
+  "executionContract": "0x697fce98f892b4e45f4322fc60ba011fc0911ee0",
+  "executionTransactionHash": "0x32dc066865c6ade825be60e6eab8c39c80769e106069118ce2fcc82b15a6d13f"
+}
