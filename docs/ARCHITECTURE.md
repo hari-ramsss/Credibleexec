@@ -1,3 +1,5 @@
+> Update: the default public network is now Base Sepolia (84532), with Circle faucet USDC, Privy signing, a test execution fixture, and deterministic orchestration without paid Bazantic calls. Mainnet mode is disabled. Earlier live-integration descriptions below are historical. See SETUP.md.
+
 # Implementation decisions and trust boundaries
 
 The nine supplied specifications define the product. Their staged authoring directions such as “do not build the frontend yet” are not additional user requests; the user's explicit request to implement the whole project takes precedence. The original documents remain unchanged.
