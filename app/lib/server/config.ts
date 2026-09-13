@@ -1,11 +1,14 @@
 import { z } from "zod";
 import { addressSchema, uintSchema, AppError } from "@credibleexec/domain";
 import { privateKeyToAccount } from "viem/accounts";
-import { base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { defineChain, type Chain } from "viem";
 
 export function config() {
-  const local = process.env.EXECUTION_MODE === "local";
+  const mode = z
+    .enum(["local", "testnet"])
+    .parse(process.env.EXECUTION_MODE ?? "testnet");
+  const local = mode === "local";
   if (local && process.env.NODE_ENV === "production")
     throw new AppError(
       "UNSAFE_CONFIG",
@@ -30,7 +33,7 @@ export function config() {
         nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
         rpcUrls: { default: { http: [rpc] } },
       })
-    : base;
+    : baseSepolia;
   const agent = privateKeyToAccount(
     key.parse(process.env.AGENT_PRIVATE_KEY) as `0x${string}`,
   );
@@ -45,6 +48,8 @@ export function config() {
     );
   return {
     local,
+    testnet: !local,
+    demo: true,
     chain,
     rpc,
     agent,
@@ -53,14 +58,14 @@ export function config() {
     usdc: addressSchema.parse(
       local
         ? process.env.USDC_ADDRESS
-        : "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        : "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
     ),
     router: addressSchema.parse(
       local
         ? process.env.LOCAL_EXECUTION_ADDRESS
-        : "0x111111125421cA6dc452d289314280a0f8842A65",
+        : process.env.TEST_EXECUTION_ADDRESS,
     ),
-    bondAmount: uintSchema.parse(process.env.AGENT_BOND_AMOUNT ?? "100000000"),
+    bondAmount: uintSchema.parse(process.env.AGENT_BOND_AMOUNT ?? "1000000"),
     confirmations: local
       ? 1
       : z.coerce
@@ -83,18 +88,18 @@ export function readinessConfig() {
       : [
           "NEXT_PUBLIC_PRIVY_APP_ID",
           "PRIVY_APP_SECRET",
-          "ONEINCH_API_KEY",
-          "BAZANTIC_RECIPE_HANDLE",
-          "BAZANTIC_TOOL_SECRET",
+          "TEST_EXECUTION_ADDRESS",
         ]),
   ];
   const missing = required.filter((k) => !process.env[k]);
+  if (!["local", "testnet"].includes(process.env.EXECUTION_MODE ?? "testnet"))
+    missing.push("EXECUTION_MODE must be testnet or local (mainnet disabled)");
   return {
     configured: missing.length === 0,
-    mode: local ? "local" : "live",
+    mode: local ? "local" : "testnet",
     missing,
-    chainId: local ? 31337 : 8453,
-    chainName: local ? "Local development" : "Base",
-    bondAmount: process.env.AGENT_BOND_AMOUNT ?? "100000000",
+    chainId: local ? 31337 : 84532,
+    chainName: local ? "Local development" : "Base Sepolia",
+    bondAmount: process.env.AGENT_BOND_AMOUNT ?? "1000000",
   };
 }

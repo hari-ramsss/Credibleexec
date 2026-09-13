@@ -82,7 +82,7 @@ export async function collectEvidence(c: Commitment): Promise<Evidence> {
       /* Other USDC events are irrelevant. */
     }
   }
-  if (cfg.local) {
+  if (cfg.demo) {
     let found = false;
     for (const log of receipt.logs)
       if (sameAddress(log.address, cfg.router))
