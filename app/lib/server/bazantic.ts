@@ -7,7 +7,7 @@ import { read, type Draft, type Job } from "./store";
 import { tool } from "./workflow";
 import { config } from "./config";
 export async function runRecipe(job: Job) {
-  if (config().local) {
+  if (config().demo) {
     if (job.phase === "compile") {
       await tool(job.id, "context");
       await tool(

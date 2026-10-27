@@ -33,7 +33,7 @@ export const mandateSchema = z
     recipient: addressSchema,
     userWallet: addressSchema,
     deadline: z.number().int().positive(),
-    executionVenue: z.literal("1inch"),
+    executionVenue: z.enum(["1inch", "test-fixture"]),
   })
   .strict()
   .refine(

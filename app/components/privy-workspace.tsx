@@ -5,14 +5,14 @@ import {
   useWallets,
   useSendTransaction,
 } from "@privy-io/react-auth";
-import { base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { Workspace } from "./workspace";
 function ConnectedWorkspace() {
   const { ready, authenticated, user, login, logout, getAccessToken } =
     usePrivy();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
-  const wallet = wallets.find((w) => w.walletClientType === "privy");
+  const wallet = wallets.find((w) => w.walletClientType === "privy") || wallets[0];
   return (
     <Workspace
       key={`${user?.id ?? "guest"}:${wallet?.address ?? ""}`}
@@ -55,10 +55,10 @@ export default function PrivyWorkspace() {
         },
         loginMethods: ["email", "wallet"],
         embeddedWallets: {
-          ethereum: { createOnLogin: "users-without-wallets" },
+          ethereum: { createOnLogin: "all-users" },
         },
-        defaultChain: base,
-        supportedChains: [base],
+        defaultChain: baseSepolia,
+        supportedChains: [baseSepolia],
       }}
     >
       <ConnectedWorkspace />

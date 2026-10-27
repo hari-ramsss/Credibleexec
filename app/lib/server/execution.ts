@@ -151,11 +151,21 @@ export class OneInchExecutionProvider implements ExecutionProvider {
 }
 export class LocalExecutionProvider implements ExecutionProvider {
   async quote(m: Mandate) {
+    const { c, rpc } = chainClients();
+    if (
+      c.testnet &&
+      BigInt(m.minOutput) > (await rpc.getBalance({ address: c.router }))
+    )
+      throw new AppError(
+        "TEST_LIQUIDITY",
+        "Fund the test execution contract with faucet ETH or request a smaller test output.",
+        409,
+      );
     return m.minOutput;
   }
   async build(m: Mandate): Promise<UnsignedTransaction> {
     const { c } = chainClients();
-    if (!c.local) throw new Error("Local execution disabled");
+    if (!c.demo) throw new Error("Test execution disabled");
     return {
       from: m.userWallet,
       to: c.router,
@@ -165,12 +175,12 @@ export class LocalExecutionProvider implements ExecutionProvider {
         args: [BigInt(m.amountIn), m.recipient, BigInt(m.minOutput)],
       }),
       value: "0",
-      chainId: 31337,
+      chainId: c.chain.id,
     };
   }
 }
 export function executionProvider(): ExecutionProvider {
-  return chainClients().c.local
+  return chainClients().c.demo
     ? new LocalExecutionProvider()
     : new OneInchExecutionProvider();
 }

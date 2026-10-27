@@ -41,7 +41,7 @@ type Preview = Extract<Compilation, { status: "SUCCESS" }> & { draftId: Hex };
 const short = (v: string) => `${v.slice(0, 6)}…${v.slice(-4)}`;
 const amount = (v: string, d = 6) => formatUnits(BigInt(v), d);
 const example =
-  "Swap 1,000 USDC for ETH and send it to my treasury. Receive at least 0.48 ETH within 5 minutes.";
+  "Swap 1 USDC for ETH and send it to my treasury. Receive at least 0.00001 ETH within 10 minutes.";
 const terminal = (c: Commitment) =>
   ["FULFILLED", "FAILED", "CANCELLED", "EXPIRED"].includes(c.status);
 function StatusBadge({ c }: { c: Commitment }) {
@@ -315,7 +315,7 @@ export function Workspace({ wallet }: { wallet?: WalletAdapter }) {
         </div>
         <div className="sidebar-bottom">
           <span className="network-dot" />
-          <span>{health?.chainName ?? "Base"} network</span>
+          <span>{health?.chainName ?? "Base Sepolia"} network</span>
           <span className="version">MVP</span>
         </div>
       </aside>
@@ -334,7 +334,7 @@ export function Workspace({ wallet }: { wallet?: WalletAdapter }) {
           <div className="topbar-right">
             <span className="network-tag">
               <span className="network-dot" />
-              {health?.mode === "local" ? "Local development" : "Base"}
+              {health?.chainName ?? "Base Sepolia"}
             </span>
             <button
               className="wallet-button"
@@ -400,6 +400,13 @@ export function Workspace({ wallet }: { wallet?: WalletAdapter }) {
               mode.
             </div>
           )}
+          {health?.mode === "testnet" && (
+            <div className="local-banner">
+              Base Sepolia | Free test assets only | Privy signing with a
+              deterministic demo parser and test execution contract. No paid
+              Bazantic calls or 1inch swaps.
+            </div>
+          )}
           {tab === "about" ? (
             <section className="about-grid">
               {[
@@ -416,7 +423,7 @@ export function Workspace({ wallet }: { wallet?: WalletAdapter }) {
                 [
                   "03",
                   "Authorize the action",
-                  "Privy asks for the exact token approval and swap transaction. 1inch supplies the execution route.",
+                  "Privy asks for the exact token approval and test transaction. A test contract supplies the demo output on Base Sepolia.",
                 ],
                 [
                   "04",
@@ -850,9 +857,9 @@ export function Workspace({ wallet }: { wallet?: WalletAdapter }) {
                             .map(([name, hash]) => (
                               <p key={name}>
                                 {name}:{" "}
-                                {health?.chainId === 8453 ? (
+                                {health?.chainId === 84532 ? (
                                   <a
-                                    href={`https://basescan.org/tx/${hash}`}
+                                    href={`https://sepolia.basescan.org/tx/${hash}`}
                                     target="_blank"
                                     rel="noreferrer"
                                   >

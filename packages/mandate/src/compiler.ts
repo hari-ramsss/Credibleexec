@@ -113,7 +113,8 @@ export function compileIntent(raw: unknown, ctx: Context): Compilation {
     recipient: addressSchema.parse(recipient),
     userWallet: ctx.userWallet,
     deadline: ctx.now + duration,
-    executionVenue: "1inch",
+    executionVenue:
+      ctx.chainId === 84532 || ctx.chainId === 31337 ? "test-fixture" : "1inch",
   });
   return {
     status: "SUCCESS",

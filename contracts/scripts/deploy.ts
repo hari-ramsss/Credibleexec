@@ -8,7 +8,7 @@ import {
   encodeDeployData,
   type Hex,
 } from "viem";
-import { base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { compile, root } from "./compile";
 const rpcUrl = process.env.RPC_URL,
@@ -19,10 +19,10 @@ const authority = privateKeyToAccount(
   process.env.SETTLEMENT_PRIVATE_KEY as Hex,
 ).address;
 const deployer = privateKeyToAccount(key);
-const token = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-const rpc = createPublicClient({ chain: base, transport: http(rpcUrl) });
-if ((await rpc.getChainId()) !== 8453)
-  throw new Error("Live deployment requires Base chain 8453.");
+const token = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+const rpc = createPublicClient({ chain: baseSepolia, transport: http(rpcUrl) });
+if ((await rpc.getChainId()) !== 84532)
+  throw new Error("Deployment requires Base Sepolia chain 84532.");
 if (
   (await rpc.readContract({
     address: token,
@@ -31,9 +31,10 @@ if (
   })) !== 6
 )
   throw new Error("Unexpected USDC decimals.");
-const artifact = compile().CredibleExecBond;
+const artifacts = compile();
+const artifact = artifacts.CredibleExecBond;
 const wallet = createWalletClient({
-  chain: base,
+  chain: baseSepolia,
   account: deployer,
   transport: http(rpcUrl),
 });
@@ -45,7 +46,7 @@ const gas = await rpc.estimateGas({
 console.log(
   JSON.stringify(
     {
-      chain: 8453,
+      chain: 84532,
       token,
       authority,
       owner: deployer.address,
@@ -65,7 +66,7 @@ const receipt = await rpc.waitForTransactionReceipt({ hash, confirmations: 2 });
 if (receipt.status !== "success" || !receipt.contractAddress)
   throw new Error("Deployment failed.");
 const output = {
-  chainId: 8453,
+  chainId: 84532,
   contract: receipt.contractAddress,
   token,
   authority,
@@ -74,7 +75,37 @@ const output = {
 };
 fs.mkdirSync(path.join(root, "contracts/deployments"), { recursive: true });
 fs.writeFileSync(
-  path.join(root, "contracts/deployments/base.json"),
+  path.join(root, "contracts/deployments/base-sepolia.json"),
   JSON.stringify(output, null, 2),
 );
 console.log(`BOND_CONTRACT_ADDRESS=${receipt.contractAddress}`);
+
+const executionHash = await wallet.deployContract({
+  ...artifacts.TestExecution,
+  args: [token],
+});
+console.log("Test executor deployment submitted:", executionHash);
+const executionReceipt = await rpc.waitForTransactionReceipt({
+  hash: executionHash,
+  confirmations: 2,
+});
+if (executionReceipt.status !== "success" || !executionReceipt.contractAddress)
+  throw new Error(
+    "Test executor deployment failed; preserve the bond address printed above.",
+  );
+fs.writeFileSync(
+  path.join(root, "contracts/deployments/base-sepolia.json"),
+  JSON.stringify(
+    {
+      ...output,
+      executionContract: executionReceipt.contractAddress,
+      executionTransactionHash: executionHash,
+    },
+    null,
+    2,
+  ),
+);
+console.log("TEST_EXECUTION_ADDRESS=" + executionReceipt.contractAddress);
+console.log(
+  "Send a small amount of faucet ETH (for example 0.001) to the test executor to fund demo outputs.",
+);

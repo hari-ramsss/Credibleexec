@@ -25,7 +25,7 @@ try {
   ).toBeVisible({ timeout: 30000 });
   await expect(page.locator(".local-banner")).toBeVisible({ timeout: 30000 });
   await page.getByRole("button", { name: "Try an example" }).click();
-  await expect(page.locator("#request")).toHaveValue(/Swap 1,000 USDC/);
+  await expect(page.locator("#request")).toHaveValue(/Swap 1 USDC/);
   await page.screenshot({
     path: path.join(output, "desktop.png"),
     fullPage: true,

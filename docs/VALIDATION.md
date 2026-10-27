@@ -1,4 +1,10 @@
+> Update: the default public network is now Base Sepolia (84532), with Circle faucet USDC, Privy signing, a test execution fixture, and deterministic orchestration without paid Bazantic calls. Mainnet mode is disabled. Earlier live-integration descriptions below are historical. See SETUP.md.
+
 # Implementation validation
+
+## Base Sepolia change (2026-09-13)
+
+All 12 automated tests pass, including a new check that the free default uses chain 84532 and fixture-bound mandates/transactions, does not require paid integration keys, rejects mainnet mode, and does not bypass Privy authentication. Workspace TypeScript, app lint, and the Next production build pass (including page generation and deployment tracing). No public testnet contract has been deployed or Privy transaction broadcast by the coding agent; those require your faucet-funded accounts and setup. The browser and HTTP economic-loop results below describe the earlier local validation run.
 
 Verified locally on Windows with Node 22.16 and the committed pnpm workspace dependencies.
 
